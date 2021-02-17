@@ -158,44 +158,41 @@ public static class PathExtensions
 	{
 		foreach (T item in items)
 		{
-
-
 			updateMethod(item);
-
-
 		}
 		return items;
 	}
 }
 
-// data items for a give document folder
-private class DocFolder
+// data items for a document folder type
+public class DocFolder
 {
-	public string metaDataGuid { get; set; }
+	public string MetaDataGuid { get; set; }
 	// ignore the relationship codes.  We only want the string document types.
 	[JsonIgnore]
 	public int Id { get; set; } //1100
 	[JsonIgnore]
-	public int parentId { get; set; } //11
+	public int ParentId { get; set; } //11
 
-	public int level { get; set; }  // 0, 1, 2, 3 ...
-	public string docType { get; set; } // "1100" - A FC General Document Folder .../11/1100...
-	public string parentDocType { get; set; } // "11"  - A  FC Documents Root Folder .../11/...
-	public string docFolderName { get; set; }
-	public string docFolderDescription { get; set; } // about text	
-	public string docFolderPath { get; set; }
-	public string appSettingsKeyName;
-	public string appSettingsValue;
-	public string appSettingsFolderPath { get; set; }
-	public List<DocFolder> docSubFolder { get; set; }
+	public int Level { get; set; }  // 0, 1, 2, 3 ...
+	public string DocType { get; set; } // "1100" - A FC General Document Folder .../11/1100...
+	public string ParentDocType { get; set; } // "11"  - A  FC Documents Root Folder .../11/...
+	public string DocFolderName { get; set; }
+	public string DocFolderDescription { get; set; } // about text	
+	public string DocFolderPath { get; set; }
+	public string AppSettingsKeyName;
+	public string AppSettingsValue;
+	public string AppSettingsFolderPath { get; set; }
+	public List<DocFolder> DocSubFolder { get; set; }
 
 	public DocFolder()
 	{
-		docSubFolder = new List<DocFolder>();
+		DocSubFolder = new List<DocFolder>();
 	}
 
 }
-private XmlNode GetAppString(string name1, string name2, string settingValue)
+
+public XmlNode GetAppString(string name1, string name2, string settingValue)
 {
 	name1 = name1.ToLower();
 	name2 = name2.ToLower();
@@ -240,10 +237,8 @@ private XmlNode GetAppString(string name1, string name2, string settingValue)
 
 }
 
-
-
 // return a JSON string of folder definitions and program bits
-private string GetFolderSubFolderAppSettings()
+public string GetFolderSubFolderAppSettings()
 {
 	string json = string.Empty;
 	string jsonRoot = "folders";
@@ -255,32 +250,32 @@ private string GetFolderSubFolderAppSettings()
 	dtFolders.Rows.Cast<DataRow>()
 			 .Select(r => new DocFolder
 			 {
-				 level = r.Field<int>("LEVEL"),
-				 Id = r.Field<int>("ResourceId"),
-				 parentId = r.Field<int>("ParentId"),
-				 docType = r.Field<int>("ResourceId").ToString(),
-				 parentDocType = r.Field<int>("ParentId").ToString(),
-				 docFolderName = ((r.Field<int>("LEVEL") == 0) ? string.Empty :
-				 string.Concat(((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDERDEFINITION")))).folderName.ToString())),
-				 docFolderDescription = ((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDERDEFINITION")))).folderDescription.ToString(),
-				 docFolderPath = string.Empty,
-				 metaDataGuid = Guid.NewGuid().BrMGuid(),
-				 appSettingsKeyName = ((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDERDEFINITION")))).folderDescription.ToString().Replace(" ", "_").Replace("___", "_").Replace("__", "_").Replace("-", "_"),
-				 appSettingsValue = ((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDERDEFINITION")))).folderName.ToString(),
-				 appSettingsFolderPath = string.Empty
+				 Level = r.Field<int>("LEVEL"),
+				 Id = r.Field<int>("RESOURCE_ID"),
+				 ParentId = r.Field<int>("PARENT_ID"),
+				 DocType = r.Field<int>("RESOURCE_ID").ToString(),
+				 ParentDocType = r.Field<int>("PARENT_ID").ToString(),
+				 DocFolderName = ((r.Field<int>("LEVEL") == 0) ? string.Empty :
+				 string.Concat(((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDER_DEFINITION")))).folderName.ToString())),
+				 DocFolderDescription = ((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDER_DEFINITION")))).folderDescription.ToString(),
+				 DocFolderPath = string.Empty,
+				 MetaDataGuid = Guid.NewGuid().BrMGuid(),
+				 AppSettingsKeyName = ((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDER_DEFINITION")))).folderDescription.ToString().Replace(" ", "_").Replace("___", "_").Replace("__", "_").Replace("-", "_"),
+				 AppSettingsValue = ((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDER_DEFINITION")))).folderName.ToString(),
+				 AppSettingsFolderPath = string.Empty
 			 })
 			.ToDictionary(m => m.Id);
 
 
-	List<DocFolder> docFolders = new List<DocFolder>();
+	List<DocFolder> DocFolders = new List<DocFolder>();
 
 	foreach (var kvp in dict)
 	{
-		List<DocFolder> folder = docFolders;
+		List<DocFolder> folder = DocFolders;
 		DocFolder item = kvp.Value;
-		if (item.parentId >= 0)
+		if (item.ParentId >= 0)
 		{
-			folder = dict[item.parentId].docSubFolder;
+			folder = dict[item.ParentId].DocSubFolder;
 		}
 		var serialize = "";
 		
@@ -289,35 +284,35 @@ private string GetFolderSubFolderAppSettings()
 		var stripCharsPattern =  @"(?i)(?<chars>[\W.,;_@_\- -[\\/]])+|(?<slashes>[\\/])+";
 		var stripCharsReplace = @"_";
 		
-		switch (item.level)
+		switch (item.Level)
 		{
 			case 0:
-				item.docFolderPath = "/";
-				item.appSettingsFolderPath = string.Empty;
+				item.DocFolderPath = "/";
+				item.AppSettingsFolderPath = string.Empty;
 				break;
 
 			case 1:
 				{
-					item.docFolderPath = Regex.Replace(string.Concat("/", item.docFolderName, "/"),regexWinBackSlashPattern, replacePattern,RegexOptions.IgnoreCase);
-					serialize = Newtonsoft.Json.JsonConvert.SerializeXmlNode(GetAppString(item.appSettingsKeyName, string.Empty, string.Concat(item.docFolderPath)), Newtonsoft.Json.Formatting.None, true);
-					item.appSettingsFolderPath = serialize;
+					item.DocFolderPath = Regex.Replace(string.Concat("/", item.DocFolderName, "/"),regexWinBackSlashPattern, replacePattern,RegexOptions.IgnoreCase);
+					serialize = Newtonsoft.Json.JsonConvert.SerializeXmlNode(GetAppString(item.AppSettingsKeyName, string.Empty,  item.DocFolderPath ), Newtonsoft.Json.Formatting.None, true);
+					item.AppSettingsFolderPath = serialize;
 					break;
 				}
 			case 2:
 				{
-					item.docFolderPath =  Regex.Replace(string.Concat("/", dict[item.parentId].docFolderName, "/", item.docFolderName)
+					item.DocFolderPath =  Regex.Replace(string.Concat("/", dict[item.ParentId].DocFolderName, "/", item.DocFolderName)
 					, regexWinBackSlashPattern
 					, replacePattern,RegexOptions.IgnoreCase);
 					serialize = Newtonsoft.Json.JsonConvert.SerializeXmlNode( 
 					GetAppString(string.Concat( 
 					 Regex.Replace(
-					 dict[item.parentId].docFolderDescription.Trim(), stripCharsPattern					
+					 dict[item.ParentId].DocFolderDescription.Trim(), stripCharsPattern					
 					 , stripCharsReplace
 					 , RegexOptions.IgnoreCase)
 					 .ToLower()
 					 .TrimEnd('_')
-					 .TrimStart('_'), stripCharsReplace , item.appSettingsKeyName).ToLower(), Regex.Replace(item.docFolderName.ToLower().Trim(),stripCharsPattern,stripCharsReplace).ToLower(), string.Concat(item.docFolderPath, "/")), Newtonsoft.Json.Formatting.None, true);
-					item.appSettingsFolderPath = serialize;
+					 .TrimStart('_'), stripCharsReplace , item.AppSettingsKeyName).ToLower(), Regex.Replace(item.DocFolderName.ToLower().Trim(),stripCharsPattern,stripCharsReplace).ToLower(), string.Concat(item.DocFolderPath, "/")), Newtonsoft.Json.Formatting.None, true);
+					item.AppSettingsFolderPath = serialize;
 					break;
 
 				}
@@ -329,92 +324,92 @@ private string GetFolderSubFolderAppSettings()
 
 	}
 
-	json = $"{{  \"{jsonRoot}\": {JsonConvert.SerializeObject(docFolders, Newtonsoft.Json.Formatting.Indented)} {Environment.NewLine} }} ";
+	json = $"{{  \"{jsonRoot}\": {JsonConvert.SerializeObject(DocFolders, Newtonsoft.Json.Formatting.Indented)} {Environment.NewLine} }} ";
 	return json;
 }
-
-private DataTable CreateBridgeFolderDefs(string dataTableName = "", string docRootFolder = "", string adminFolderPath = "", string brKey = "", string brGd = "")
-{
-	DataTable theDt = new DataTable(dataTableName ?? "FolderDefinitions");
-
-	//theDt.TableName = "FolderDefinitions";
-
-	// not JSON fields
-	theDt.Columns.Add("ResourceId", typeof(int));
-	theDt.Columns.Add("ParentId", typeof(int));
-	theDt.PrimaryKey = new DataColumn[] { theDt.Columns["ResourceId"], theDt.Columns["ParentId"] };
-
-	// JSON fields
-	theDt.Columns.Add(new DataColumn()
-	{
-		ColumnName = "LEVEL",
-		Unique = false,
-		AllowDBNull = false,
-		DataType = typeof(int)
-	});
-
-
-
-	theDt.Columns.Add(new DataColumn()
-	{
-		ColumnName = "DOCTYPE",
-		Unique = true,
-		AllowDBNull = false,
-		DataType = typeof(string)
-
-	}
-		);
-	theDt.Columns.Add(new DataColumn()
-	{
-		ColumnName = "PARENTDOCTYPE",
-		Unique = false,
-		AllowDBNull = true,
-		DataType = typeof(string)
-
-	});
-	theDt.Columns.Add(new DataColumn()
-	{
-		ColumnName = "FOLDERNAME",
-		Unique = false,
-		AllowDBNull = false,
-		DataType = typeof(string)
-
-	});
-	theDt.Columns.Add(new DataColumn()
-	{
-		ColumnName = "PARENTFOLDERNAME",
-		Unique = false,
-		AllowDBNull = false,
-		DataType = typeof(string)
-
-	});
-
-	theDt.Columns.Add(new DataColumn()
-	{
-		ColumnName = "FOLDERPATH",
-		Unique = false,
-		AllowDBNull = false,
-		DataType = typeof(string)
-	});
-
-	theDt.Columns.Add(new DataColumn()
-	{
-		ColumnName = "FOLDERDESCRIPTION",
-		Unique = false,
-		AllowDBNull = false,
-		DataType = typeof(string)
-	});
-
-	theDt.Columns.Add(new DataColumn()
-	{
-		ColumnName = "METADATAGUID",
-		Unique = true,
-		AllowDBNull = false,
-		DataType = typeof(string)
-	});
-
-	return theDt;
-}
+//
+//public DataTable CreateBridgeFolderDefs(string dataTableName = "", string docRootFolder = "", string adminFolderPath = "", string brKey = "", string brGd = "")
+//{
+//	DataTable theDt = new DataTable(dataTableName ?? "FolderDefinitions");
+//
+//	//theDt.TableName = "FolderDefinitions";
+//
+//	// not JSON fields
+//	theDt.Columns.Add("RESOURCE_ID", typeof(int));
+//	theDt.Columns.Add("PARENT_ID", typeof(int));
+//	theDt.PrimaryKey = new DataColumn[] { theDt.Columns["RESOURCE_ID"], theDt.Columns["PARENT_ID"] };
+//
+//	// JSON fields
+//	theDt.Columns.Add(new DataColumn()
+//	{
+//		ColumnName = "LEVEL",
+//		Unique = false,
+//		AllowDBNull = false,
+//		DataType = typeof(int)
+//	});
+//
+//
+//
+//	theDt.Columns.Add(new DataColumn()
+//	{
+//		ColumnName = "DOCTYPE",
+//		Unique = true,
+//		AllowDBNull = false,
+//		DataType = typeof(string)
+//
+//	}
+//		);
+//	theDt.Columns.Add(new DataColumn()
+//	{
+//		ColumnName = "PARENTDOCTYPE",
+//		Unique = false,
+//		AllowDBNull = true,
+//		DataType = typeof(string)
+//
+//	});
+//	theDt.Columns.Add(new DataColumn()
+//	{
+//		ColumnName = "FOLDERNAME",
+//		Unique = false,
+//		AllowDBNull = false,
+//		DataType = typeof(string)
+//
+//	});
+//	theDt.Columns.Add(new DataColumn()
+//	{
+//		ColumnName = "PARENTFOLDERNAME",
+//		Unique = false,
+//		AllowDBNull = false,
+//		DataType = typeof(string)
+//
+//	});
+//
+//	theDt.Columns.Add(new DataColumn()
+//	{
+//		ColumnName = "FOLDERPATH",
+//		Unique = false,
+//		AllowDBNull = false,
+//		DataType = typeof(string)
+//	});
+//
+//	theDt.Columns.Add(new DataColumn()
+//	{
+//		ColumnName = "FOLDERDESCRIPTION",
+//		Unique = false,
+//		AllowDBNull = false,
+//		DataType = typeof(string)
+//	});
+//
+//	theDt.Columns.Add(new DataColumn()
+//	{
+//		ColumnName = "METADATAGUID",
+//		Unique = true,
+//		AllowDBNull = false,
+//		DataType = typeof(string)
+//	});
+//
+//	return theDt;
+//}
 
 private DataTable GenerateFolderTable(string dataTableName = "", string defFileName = "")
 {
@@ -435,21 +430,31 @@ private DataTable GenerateFolderTable(string dataTableName = "", string defFileN
 			DataType = typeof(int)
 		});
 
-		theDt.Columns.Add("ResourceId", typeof(int));
+		theDt.Columns.Add("RESOURCE_ID", typeof(int));
 
-		theDt.Columns.Add("ParentId", typeof(int));
+		theDt.Columns.Add("PARENT_ID", typeof(int));
 
 		theDt.Columns.Add(new DataColumn()
 		{
-			ColumnName = "FOLDERDEFINITION",
+			ColumnName = "FOLDER_DEFINITION",
 			Unique = false,
 			AllowDBNull = false,
 			DataType = typeof(string)
 		});
 
-
+		theDt.Columns.Add(new DataColumn()
+		{
+			ColumnName = "BRIDGE_FOLDER", // true or false if this is a folder containing bridge-specific (inspection-specific) documents
+			Unique = false,
+			AllowDBNull = false,
+			DefaultValue = true,
+			DataType = typeof(bool),
+			Caption="BRIDGE_FOLDER"
+		});
+		
 		// General Types
 		string BridgeFoldersRootDef = JsonConvert.SerializeObject(new { folderName = "bridge", parentFolderName = "BridgeIdentifier", folderDescription = "Bridge Folders Root" });
+		string FormFoldersRootDef = JsonConvert.SerializeObject(new { folderName = "formtype", parentFolderName = "forms", folderDescription = "Form Folders Root" });
 		string NBIRootDef = JsonConvert.SerializeObject(new { folderName = "NBI", parentFolderName = "", folderDescription = "NBI Inspection Root" });
 		string FCInspsRootDef = JsonConvert.SerializeObject(new { folderName = "SPI/FC", parentFolderName = "", folderDescription = "Fracture Critical Inspection Root" });
 		string UWInspsRootDef = JsonConvert.SerializeObject(new { folderName = "SPI/UW", parentFolderName = "", folderDescription = "Underwater Inspection Root" });
@@ -460,6 +465,7 @@ private DataTable GenerateFolderTable(string dataTableName = "", string defFileN
 		string ScourRootDef = JsonConvert.SerializeObject(new { folderName = "SCOUR", parentFolderName = "", folderDescription = "Scour Program Documents Root" });
 		string LoadRatingsRootDef = JsonConvert.SerializeObject(new { folderName = "LR", parentFolderName = "", folderDescription = "Load Rating Program Documents Root" });
 		string CriticalFindingsRootDef = JsonConvert.SerializeObject(new { folderName = "CIF", parentFolderName = "", folderDescription = "Critical Findings Inspection Documents Root" });
+		string FormsTemplatesRootDef = JsonConvert.SerializeObject(new { folderName = "FORMS", parentFolderName = "", folderDescription = "Forms And Templates Root" });
 		// Subtypes
 		string GeneralSubfolderDef = JsonConvert.SerializeObject(new { folderName = "GEN", folderDescription = "General" });
 		string ReportsSubfolderDef = JsonConvert.SerializeObject(new { folderName = "RPT", folderDescription = "Reports" });
@@ -489,25 +495,25 @@ private DataTable GenerateFolderTable(string dataTableName = "", string defFileN
 		theDt.Rows.Add(new object[4] { 2, 1000, 10,  /* "1000","10",*/    GeneralSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1010, 10, /* "1010", "10",*/  ReportsSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1088, 10,  /*  "1088","10",*/ ImagesSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 1099, 10,  /*  "1099","10",*/  FormsSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 1099, 10,  /*  "1099","10",*/  FormsSubfolderDef , false});
 
 		theDt.Rows.Add(new object[4] { 1, 11, 0,  /*  "11","", */ FCInspsRootDef });
 		theDt.Rows.Add(new object[4] { 2, 1100, 11,  /*  "1100","11", */  GeneralSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1110, 11,  /*  "1110","11",*/  ReportsSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1188, 11,  /*   "11","1188",*/  ImagesSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 1199, 11,   /*  "1199","11", */ FormsSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 1199, 11,   /*  "1199","11", */ FormsSubfolderDef, false });
 
 		theDt.Rows.Add(new object[4] { 1, 12, 0,    /*  "12","",*/ UWInspsRootDef });
 		theDt.Rows.Add(new object[4] { 2, 1200, 12,  /* "1200","12", */  GeneralSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1210, 12, /*  "1210", "12", */  ReportsSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1288, 12,  /*  "1288","12",*/  ImagesSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 1299, 12, /* "1299", "12", */ FormsSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 1299, 12, /* "1299", "12", */ FormsSubfolderDef , false});
 
 		theDt.Rows.Add(new object[4] { 1, 30, 0,    /* "30","",*/ SPI_OS_RootDef });
 		theDt.Rows.Add(new object[4] { 2, 3000, 30, /* "3000", "30",*/  GeneralSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 3010, 30,  /*  "3010", "30",*/  ReportsSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 3088, 30, /*   "3088","30",*/  ImagesSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 3099, 30,  /*  "3099", "30",*/  FormsSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 3099, 30,  /*  "3099", "30",*/  FormsSubfolderDef, false});
 
 		theDt.Rows.Add(new object[4] { 1, 14, 0,   /* "14","", */ ScourRootDef });
 		theDt.Rows.Add(new object[4] { 2, 1400, 14,  /* "1410", "14",*/  GeneralSubfolderDef });
@@ -518,13 +524,16 @@ private DataTable GenerateFolderTable(string dataTableName = "", string defFileN
 		theDt.Rows.Add(new object[4] { 2, 1440, 14,  /*  "1440","14",*/  ScourRetiredPOASubfolderDef });
 
 		theDt.Rows.Add(new object[4] { 2, 1488, 14,  /*  "1488","14",*/  ImagesSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 1499, 14, /* "1499", "14",*/ FormsSubfolderDef });
-
+		theDt.Rows.Add(new object[5] { 2, 1496, 14, /* "1496", "14",*/ FormsSubfolderDef, false });
+		theDt.Rows.Add(new object[5] { 2, 1497, 14, /* "1497", "14",*/ FormsSubfolderDef, false });
+		theDt.Rows.Add(new object[5] { 2, 1498, 14, /* "1498", "14",*/ FormsSubfolderDef, false });
+		theDt.Rows.Add(new object[5] { 2, 1499, 14, /* "1499", "14",*/ FormsSubfolderDef, false });
+	
 		theDt.Rows.Add(new object[4] { 1, 15, 0,  /*"15", "",*/ CriticalFindingsRootDef });
 		theDt.Rows.Add(new object[4] { 2, 1500, 15, /*  "1500", "15",*/  GeneralSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1510, 15,  /*"1510", "15", */  ReportsSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1588, 15, /*  "1588", "15", */ ImagesSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 1599, 15,  /* "1599", "15",*/ FormsSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 1599, 15,  /* "1599", "15",*/ FormsSubfolderDef , false});
 
 		theDt.Rows.Add(new object[4] { 1, 16, 0, /* "16", "", */ LoadRatingsRootDef });
 		theDt.Rows.Add(new object[4] { 2, 1600, 16,   /*"16", "1600",*/  GeneralSubfolderDef });
@@ -532,39 +541,41 @@ private DataTable GenerateFolderTable(string dataTableName = "", string defFileN
 		theDt.Rows.Add(new object[4] { 2, 1620, 16, /*  "16", "1620", */ LRFieldInvestigationsTypeDef });
 		theDt.Rows.Add(new object[4] { 2, 1630, 16,   /*"16", "1630", */ LRBridgeStructuralModels });
 		theDt.Rows.Add(new object[4] { 2, 1688, 16, /*  "16", "1688",*/  ImagesSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 1699, 16, /* "16", "1699",*/ FormsSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 1699, 16, /* "16", "1699",*/ FormsSubfolderDef, false });
 
 		theDt.Rows.Add(new object[4] { 1, 17, 0, /* "17", "",*/ BridgeDesignPlans_RootDef });
 		theDt.Rows.Add(new object[4] { 2, 1700, 17, /*   "1700","17", */  GeneralSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1710, 17, /*  "1710","17",  */  ReportsSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1720, 17,  /*  "1720","17",*/  CADDSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 1788, 17, /*   "1788","17", */  PlansSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 1799, 17,  /*  "1799","17",*/  FormsSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 1799, 17,  /*  "1799","17",*/  FormsSubfolderDef, false });
 
 		theDt.Rows.Add(new object[4] { 1, 40, 0, /* "40","", */ SPI_PH_RootDef });
 		theDt.Rows.Add(new object[4] { 2, 4000, 40,  /* "4000",  "40",*/  GeneralSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 4010, 40,  /* "4010", "40",*/  ReportsSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 4088, 40,   /* "4088","40", */ ImagesSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 4099, 40,  /*  "4099","40",*/ FormsSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 4099, 40,  /*  "4099","40",*/ FormsSubfolderDef, false });
 
 		theDt.Rows.Add(new object[4] { 1, 50, 0,   /*  "50", "", */ SPI_DMG_RootDef });
 		theDt.Rows.Add(new object[4] { 2, 5000, 50,  /*  "5000", "50",*/ GeneralSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 5010, 50,  /*  "5010", "50", */ ReportsSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 5088, 50, /*   "5088", "50", */ ImagesSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 5099, 50,   /* "5099", "50",*/ FormsSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 5099, 50,   /* "5099", "50",*/ FormsSubfolderDef, false });
 
 		theDt.Rows.Add(new object[4] { 1, 80, 0,   /*  "80", "", */ PhotosFolderDef });
-		theDt.Rows.Add(new object[4] { 2, 8088, 80,  /*  "8088", "21",*/ ImagesSubfolderDef });
-
+		theDt.Rows.Add(new object[4] { 2, 8000, 80,   /*  "8010", "80", */ GeneralSubfolderDef });
+		theDt.Rows.Add(new object[4] { 2, 8088, 80,  /*  "8088", "80",*/ ImagesSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 8099, 80,  /*  "8099", "80",*/ FormsSubfolderDef, false });
+		
 		theDt.Rows.Add(new object[4] { 1, 90, 0,   /*  "90", "", */ QAQCFolderDef });
 		theDt.Rows.Add(new object[4] { 2, 9000, 90,  /*  "9000", "90",*/ GeneralSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 9010, 90,  /*  "9010", "90", */ ReportsSubfolderDef });
 		theDt.Rows.Add(new object[4] { 2, 9088, 90,  /*  "9088", "90",*/ ImagesSubfolderDef });
-		theDt.Rows.Add(new object[4] { 2, 9099, 90,   /* "9099", "90",*/ FormsSubfolderDef });
+		theDt.Rows.Add(new object[5] { 2, 9099, 90,   /* "9099", "90",*/ FormsSubfolderDef, false });
 
 		DataView dv = theDt.DefaultView;
 
-		dv.Sort = "parentid asc, resourceid asc";
+		dv.Sort = "PARENT_ID asc, RESOURCE_ID asc";
 		DataTable sortedDT = dv.ToTable();
 		return sortedDT;
 	}
@@ -575,49 +586,157 @@ private DataTable GenerateFolderTable(string dataTableName = "", string defFileN
 
 }
 
-private string GenerateBridgeFolderDefs(string jsonRoot, string bridgeIdentifier, string bridge_gd, string district, string county, string bridgegroup, string docRoot)
+private string GenerateFormFolderDefs(string jsonRoot, string formsRoot)
+{
+    string jsonString = string.Empty;
+	string prefix = formsRoot;
+
+	DataTable dtFolders = GenerateFolderTable();
+
+    var dict  = (from row in dtFolders.AsEnumerable()
+			where row.Field<bool>("BRIDGE_FOLDER") == false
+			|| (row.Field<int>("RESOURCE_ID").ToString() != "0" && row.Field<int>("PARENT_ID").ToString() == "0") // 0,0
+		    || (row.Field<int>("RESOURCE_ID").ToString() == "0" && row.Field<int>("PARENT_ID").ToString() == "-1")
+			select new DocFolder
+			 {
+				 Level = row.Field<int>("LEVEL"),
+				 Id = row.Field<int>("RESOURCE_ID"),
+				 ParentId = row.Field<int>("PARENT_ID"),
+				 DocType =row.Field<int>("RESOURCE_ID").ToString(),
+				 ParentDocType = row.Field<int>("PARENT_ID").ToString(),
+				 DocFolderName = ((row.Field<int>("LEVEL") == 0) ? $@"/" :
+				 string.Concat(((dynamic)(JsonConvert.DeserializeObject(row.Field<string>("FOLDER_DEFINITION")))).folderName.ToString())),
+				 DocFolderDescription = "",
+				 DocFolderPath = (row.Field<int>("LEVEL") == 0) ? "/" : string.Empty,
+				 MetaDataGuid = Guid.NewGuid().BrMGuid()
+			 }).ToDictionary(t=> t.Id);
+
+			 
+ 
+
+	 
+	/*Dictionary<int, DocFolder> dict =
+	dtFolders.Rows.Cast<DataRow>()
+					 .Where (r2 => !( r2.Field<bool>("BRIDGE_FOLDER")  && r2.Field<int>("PARENT_ID").ToString() ==  r2.Field<int>("RESOURCE_ID").ToString().Substring(0,2 ) )   //1099,10					
+		 ||  (r2.Field<int>("RESOURCE_ID").ToString() != "0" &&  r2.Field<int>("PARENT_ID").ToString() == "0" ) // 0,0
+			  ||  (r2.Field<int>("RESOURCE_ID").ToString()=="0" && r2.Field<int>("PARENT_ID").ToString()=="-1")) // 10, 0
+			 .Select(r => new DocFolder
+			 {
+				 level = r.Field<int>("LEVEL"),
+				 Id = r.Field<int>("RESOURCE_ID"),
+				 ParentId = r.Field<int>("PARENT_ID"),
+				 DocType = r.Field<int>("RESOURCE_ID").ToString(),
+				 ParentDocType = r.Field<int>("PARENT_ID").ToString(),
+				 DocFolderName = ((r.Field<int>("LEVEL") == 0) ? $@"/" :
+				 string.Concat(((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDER_DEFINITION")))).folderName.ToString())),
+				 DocFolderDescription = "",
+				 DocFolderPath = (r.Field<int>("LEVEL") == 0) ? "/" : string.Empty,
+				 MetaDataGuid = Guid.NewGuid().BrMGuid()
+			 })
+			.ToDictionary(m => m.Id);
+			*/
+	List<DocFolder> DocFolders = new List<DocFolder>();
+
+	foreach (var kvp in dict)
+	{
+		List<DocFolder> folder = DocFolders;
+		DocFolder item = kvp.Value;
+		item.Id.Dump();
+		item.ParentId.Dump();
+		kvp.Value.Dump();
+		
+		if (item.ParentId == 0)
+		{			
+			item.DocFolderPath =  Regex.Replace( string.Concat(prefix, System.IO.Path.Combine(dict[0].DocFolderName, dict[item.ParentId].DocFolderName, item.DocFolderName)), @"(?i)[\\]+", @"/", RegexOptions.IgnoreCase);
+			item.DocFolderDescription=( string.Concat( item.DocFolderName) + " Forms - Main");
+			
+		}
+		
+		
+
+		if (item.Level > 1) // a real subfolder e.g. UW or SPI/OS
+		{
+			//Console.WriteLine(item.ParentId);
+			// Console.WriteLine($@"{dict[0].DocFolderName}/{dict[item.ParentId].DocFolderName}/{item.DocFolderName}"  );
+			item.DocFolderPath = Regex.Replace(string.Concat(prefix, System.IO.Path.Combine(dict[0].DocFolderName, dict[item.ParentId].DocFolderName, item.DocFolderName)), @"(?i)[\\]+", @"/", RegexOptions.IgnoreCase);
+			item.DocFolderDescription= string.Concat( dict[item.ParentId].DocFolderName," Forms And Templates");
+		}
+		
+		if (item.ParentId >=0)
+		{
+			folder = dict[item.ParentId].DocSubFolder;
+		}
+		
+		folder.Add(item);
+	}
+
+	jsonString = $"{{ \"{jsonRoot}\": {JsonConvert.SerializeObject(DocFolders, Newtonsoft.Json.Formatting.Indented)} {Environment.NewLine} }}";
+	return jsonString;
+}
+
+private string GenerateBridgeFolderDefs(string jsonRoot, string bridgeIdentifier, string district, string county, string bridgegroup, string docRoot )
 {
 	string jsonString = string.Empty;
 
 	string prefix = Regex.Replace(System.IO.Path.Combine(docRoot, district, county, bridgegroup),@"(?i)[\\]+", @"/",RegexOptions.IgnoreCase);
 
 	DataTable dtFolders = GenerateFolderTable();
-
-	Dictionary<int, DocFolder> dict =
-	dtFolders.Rows.Cast<DataRow>()
-			 .Select(r => new DocFolder
-			 {
-				 level = r.Field<int>("LEVEL"),
-				 Id = r.Field<int>("ResourceId"),
-				 parentId = r.Field<int>("ParentId"),
-				 docType = r.Field<int>("ResourceId").ToString(),
-				 parentDocType = r.Field<int>("ParentId").ToString(),
-				 docFolderName = ((r.Field<int>("LEVEL") == 0) ? $@"/{bridgeIdentifier}" :
-				 string.Concat(((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDERDEFINITION")))).folderName.ToString())),
-				 docFolderDescription = ((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDERDEFINITION")))).folderDescription.ToString(),
-				 docFolderPath = string.Empty,
-				 metaDataGuid = Guid.NewGuid().BrMGuid()
-			 })
-			.ToDictionary(m => m.Id);
+	var dict = (from row in dtFolders.AsEnumerable()
+				where row.Field<bool>("BRIDGE_FOLDER") 
+				|| (row.Field<int>("RESOURCE_ID").ToString() != "0" && row.Field<int>("PARENT_ID").ToString() == "0") // 0,0
+				|| (row.Field<int>("RESOURCE_ID").ToString() == "0" && row.Field<int>("PARENT_ID").ToString() == "-1")
+				select new DocFolder
+				{
+					Level = row.Field<int>("LEVEL"),
+					Id = row.Field<int>("RESOURCE_ID"),
+					ParentId = row.Field<int>("PARENT_ID"),
+					DocType = row.Field<int>("RESOURCE_ID").ToString(),
+					ParentDocType = row.Field<int>("PARENT_ID").ToString(),
+					DocFolderName = ((row.Field<int>("LEVEL") == 0) ? $@"/" :
+					 string.Concat(((dynamic)(JsonConvert.DeserializeObject(row.Field<string>("FOLDER_DEFINITION")))).folderName.ToString())),
+					DocFolderDescription = "",
+					DocFolderPath = (row.Field<int>("LEVEL") == 0) ? "/" : string.Empty,
+					MetaDataGuid = Guid.NewGuid().BrMGuid()
+				}).ToDictionary(t => t.Id);
+	//Dictionary<int, DocFolder> dict =
+	//dtFolders.Rows.Cast<DataRow>()
+	//		.Where(r2 => !(r2.Field<int>("RESOURCE_ID").ToString().EndsWith("99") && r2.Field<int>("PARENT_ID").ToString() == r2.Field<int>("RESOURCE_ID").ToString().Substring(0, 2)) //1010,10
+	//		 || (r2.Field<int>("RESOURCE_ID").ToString() != "0" && r2.Field<int>("PARENT_ID").ToString() == "0") // 0,0
+	//		 || (r2.Field<int>("RESOURCE_ID").ToString() == "0" && r2.Field<int>("PARENT_ID").ToString() == "-1")) // 10, 0
+	//		 .Select(r => new DocFolder
+	//		 {
+	//			 Level = r.Field<int>("LEVEL"),
+	//			 Id = r.Field<int>("RESOURCE_ID"),
+	//			 ParentId = r.Field<int>("PARENT_ID"),
+	//			 DocType = r.Field<int>("RESOURCE_ID").ToString(),
+	//			 ParentDocType = r.Field<int>("PARENT_ID").ToString(),
+	//			 DocFolderName = ((r.Field<int>("LEVEL") == 0) ? $@"/{bridgeIdentifier}" :
+	//			 string.Concat(((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDER_DEFINITION")))).folderName.ToString())),
+	//			 DocFolderDescription = ((dynamic)(JsonConvert.DeserializeObject(r.Field<string>("FOLDER_DEFINITION")))).folderDescription.ToString(),
+	//			 DocFolderPath = string.Empty,
+	//			 MetaDataGuid = Guid.NewGuid().BrMGuid()
+	//		 })
+	//		.ToDictionary(m => m.Id);
 	//dict.Dump();
 
-	List<DocFolder> docFolders = new List<DocFolder>();
+	List<DocFolder> DocFolders = new List<DocFolder>();
 
 	foreach (var kvp in dict)
 	{
-		List<DocFolder> folder = docFolders;
+		List<DocFolder> folder = DocFolders;
 		DocFolder item = kvp.Value;
-		if (item.parentId >= 0)
+		
+		if (item.ParentId >= 0)
 		{
-			folder = dict[item.parentId].docSubFolder;
+			folder = dict[item.ParentId].DocSubFolder;
 		}
 
 
-		if (item.level > 1) // a real subfolder e.g. UW or SPI/OS
+		if (item.Level > 1) // a real subfolder e.g. UW or SPI/OS
 		{
-			//Console.WriteLine(item.parentId);
-			// Console.WriteLine($@"{dict[0].docFolderName}/{dict[item.parentId].docFolderName}/{item.docFolderName}"  );
-			item.docFolderPath = Regex.Replace( string.Concat(prefix, System.IO.Path.Combine(dict[0].docFolderName, dict[item.parentId].docFolderName, item.docFolderName)) ,@"(?i)[\\]+", @"/",RegexOptions.IgnoreCase);
+			//Console.WriteLine(item.ParentId);
+			// Console.WriteLine($@"{dict[0].DocFolderName}/{dict[item.ParentId].DocFolderName}/{item.DocFolderName}"  );
+			item.DocFolderPath = Regex.Replace( string.Concat(prefix, System.IO.Path.Combine(dict[0].DocFolderName, dict[item.ParentId].DocFolderName, item.DocFolderName)) ,@"(?i)[\\]+", @"/",RegexOptions.IgnoreCase);
 		}
 
 
@@ -625,20 +744,20 @@ private string GenerateBridgeFolderDefs(string jsonRoot, string bridgeIdentifier
 
 	}
 
-	jsonString = $"{{ \"{jsonRoot}\": {JsonConvert.SerializeObject(docFolders, Newtonsoft.Json.Formatting.Indented)} {Environment.NewLine} }}";
+	jsonString = $"{{ \"{jsonRoot}\": {JsonConvert.SerializeObject(DocFolders, Newtonsoft.Json.Formatting.Indented)} {Environment.NewLine} }}";
 	return jsonString;
 }
 
-private IEnumerable<JToken> GetBridgeFoldersByTypeKey(string json, string docTypeKey)
+private IEnumerable<JToken> GetBridgeFoldersByTypeKey(string json, string DocTypeKey)
 {
-	return GetBridgeFoldersByTypeKey(JObject.Parse(json), docTypeKey);
+	return GetBridgeFoldersByTypeKey(JObject.Parse(json), DocTypeKey);
 }
 
-private IEnumerable<JToken> GetBridgeFoldersByTypeKey(JObject json, string docTypeKey)
+private IEnumerable<JToken> GetBridgeFoldersByTypeKey(JObject json, string DocTypeKey)
 {
 
 	//JObject hive = JObject.Parse(json);
-	IEnumerable<JToken> paths = json.SelectTokens($"$..docSubFolder[?(@.parentDocType == '{docTypeKey}' )].docFolderPath");
+	IEnumerable<JToken> paths = json.SelectTokens($"$..DocSubFolder[?(@.ParentDocType == '{DocTypeKey}' )].DocFolderPath");
 
 	return paths;
 
@@ -653,20 +772,20 @@ private string GetBridgeFolderBySubTypeKey(JObject json, string docSubTypeKey)
 {
 	var result = string.Empty;
 
-	JToken path = json.SelectToken($"$..docSubFolder[?(@.docType == '{docSubTypeKey}' )].docFolderPath");
+	JToken path = json.SelectToken($"$..DocSubFolder[?(@.DocType == '{docSubTypeKey}' )].DocFolderPath");
 
 	result = string.Concat(path.Value<string>().Trim(), path.Value<string>().Trim().EndsWith("/") ? "" : "/");
 	return result;
 }
 
-private IEnumerable<JToken> GetAllBridgeDocumentFolders(string json)
+private IEnumerable<JToken> GetAllDocumentFolders(string json)
 {
-	return GetAllBridgeDocumentFolders(JObject.Parse(json));
+	return GetAllDocumentFolders(JObject.Parse(json));
 }
 
-private IEnumerable<JToken> GetAllBridgeDocumentFolders(JObject json)
+private IEnumerable<JToken> GetAllDocumentFolders(JObject json)
 {
-	IEnumerable<JToken> paths = json.SelectTokens($"$..docSubFolder[?(@.parentDocType <> '0' )].docFolderPath");
+	IEnumerable<JToken> paths = json.SelectTokens($"$..DocSubFolder[?(@.ParentDocType <> '0' )].DocFolderPath");
 
 	return paths;
 }
@@ -677,7 +796,7 @@ private List<string> GetDocFolderAppSettings()
 
 
 
-	var tokens = (JObject.Parse(jsonSettings)).SelectTokens($"$..docSubFolder[?(@.level >= 1 )].appSettingsFolderPath").ToList();
+	var tokens = (JObject.Parse(jsonSettings)).SelectTokens($"$..DocSubFolder[?(@.Level >= 1 )].AppSettingsFolderPath").ToList();
 
 	List<string> settings = new List<string>();
 
@@ -704,6 +823,7 @@ void Main()
 
 	//const string tmpRoot = "C:\\tmp";	 
 	string docRootFolder = System.IO.Path.Combine(docDrive, "Docs");
+	string formsRootFolder=System.IO.Path.Combine(docDrive, "Docs","Forms");
 	string adminFolderPath = System.IO.Path.Combine(docRootFolder, "Dist", "Cty", "BrGrp");
 	//string utilityRootFolder = System.IO.Path.Combine(tmpRoot, "LBIS", "tmp");
 
@@ -718,7 +838,7 @@ void Main()
 	var cmd = new OracleCommand()
 	{
 		CommandText = @"SELECT DISTINCT Br.Brkey
-				               ,Br.Bridge_Gd
+				              -- ,Br.Bridge_Gd
 				               ,P2.Shortdesc AS District
 				               ,P1.Shortdesc AS County
 				               ,Nvl(Br.Bridgegroup, 'UNASSIGNED') AS Bridgegroup
@@ -761,17 +881,18 @@ void Main()
 	for (int i = 0; i < rows; i++)
 	{
 
-		string brKey = dt.Rows[i].Field<string>("BRKEY");
-		string bridgeGd = dt.Rows[i].Field<string>("BRIDGE_GD");
+		string bridgeIdentifier = dt.Rows[i].Field<string>("BRKEY");
+	//	string bridgeGd = dt.Rows[i].Field<string>("BRIDGE_GD");
 		string district = dt.Rows[i].Field<string>("DISTRICT");
 		string county = dt.Rows[i].Field<string>("COUNTY");
 		string bridgegroup = dt.Rows[i].Field<string>("BRIDGEGROUP");
 
 		// a JSON string
 		string jsonRootId = @"folders"; // all json will be created inside this object identifier { "docfolderstree": [] }
-		string json = GenerateBridgeFolderDefs(jsonRootId, brKey, bridgeGd, district, county, bridgegroup, docRootFolder);
-
-
+		string json = GenerateBridgeFolderDefs(jsonRootId, bridgeIdentifier, district, county, bridgegroup, docRootFolder );
+		string formsJson = GenerateFormFolderDefs(jsonRootId,formsRootFolder);
+		
+		formsJson.Dump();
 
 		JObject jsonObject = JObject.Parse(json);
 
@@ -791,16 +912,21 @@ void Main()
 		//GetBridgeFoldersByTypeKey(json, "10").Dump();
 
 		var paths = GetBridgeFoldersByTypeKey(json, "10");
-		paths.Dump();
+		paths.Dump("NBI folders for the bridge");
 
+	    paths = GetBridgeFoldersByTypeKey(json, "14");
+		paths.Dump("Scour folders for the bridge");
 
-
-		var folder = GetBridgeFolderBySubTypeKey(json, "1000");
-		folder.Dump();
+		var folder = GetBridgeFolderBySubTypeKey(json, "1400");
+		folder.Dump("Path by subtype");
 
 		//GetBridgeFolderBySubTypeKey(jsonObject, "1000").Dump();
-		GetAllBridgeDocumentFolders(json).Dump();
+		GetAllDocumentFolders(json).Dump("All folders for the bridge");
 		//GetAllBridgeDocumentFolders(jsonObject).Dump();
+		
+		GetAllDocumentFolders(formsJson).Dump("All form folders");
+		
+		
 	}
 
 	DateTime endTime = DateTime.Now;
